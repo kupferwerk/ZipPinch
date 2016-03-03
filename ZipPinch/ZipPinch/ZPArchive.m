@@ -7,7 +7,6 @@
 //
 
 #import "ZPArchive.h"
-#import "AFHTTPRequestOperation.h"
 #import "ZPURLResponseConnectionOperation.h"
 
 #include <zlib.h>
@@ -182,6 +181,15 @@ idx += sizeof(end_record._field)
               }];
 }
 
+
+/**
+ *  Parses the central directory of the URL
+ *
+ *  @param URL             the URL to fetch the directory from
+ *  @param offset          the offset to the zip directory
+ *  @param length          the length of the zip directory block
+ *  @param completionBlock the block to handle the result
+ */
 - (void)parseCentralDirectoryWithURL:(NSURL *)URL
                           withOffset:(NSInteger)offset
                           withLength:(NSUInteger)length
@@ -379,22 +387,24 @@ idx += sizeof(file_record._field)
     [request setValue:rangeValue forHTTPHeaderField:@"Range"];
     request.cachePolicy = NSURLRequestReloadIgnoringCacheData;
     
-    AFHTTPRequestOperation *operation = [[AFHTTPRequestOperation alloc] initWithRequest:request];
     
-    [operation setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
-        if (responseObject) {
-            NSData *data = responseObject;
-            completionBlock((const char *)[data bytes], [data length], nil);
-        } else {
-            completionBlock(nil, 0, [NSError errorWithDomain:ZPEntryErrorDomain code:ZPEntryErrorCodeResponseEmpty userInfo:nil]);
-        }
-        
-    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-        NSLog(@"[ZipPinch] %@", error);
-        completionBlock(nil, 0, error);
-    }];
+    NSURLSessionConfiguration* configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    configuration.HTTPMaximumConnectionsPerHost = 1;
+    configuration.timeoutIntervalForResource = 7200000;
     
-    [operation start];
+    NSURLSession* session = [NSURLSession sessionWithConfiguration:configuration];
+    NSURLSessionDownloadTask* task = [session downloadTaskWithRequest:request
+                                                completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+                                                    if (!error)  {
+                                                        //temporary adjustment to keep interface
+                                                        NSData* data = [NSData dataWithContentsOfURL:location];
+                                                        completionBlock((const char *)[data bytes], [data length], nil);
+                                                    }
+                                                    else {
+                                                        completionBlock(nil, 0, error);
+                                                    }
+                                                }];
+    [task resume];
 }
 
 @end
