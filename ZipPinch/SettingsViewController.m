@@ -6,13 +6,13 @@
 //  Copyright (c) 2014 NARR8. All rights reserved.
 //
 
-#import "ViewController.h"
+#import "SettingsViewController.h"
 #import "ZPManager.h"
 
 static NSString *const ViewControllerEntriesSegue = @"entriesSegue";
 static NSString *const ViewControllerImageSegue = @"imageSegue";
 
-@interface ViewController () <UINavigationControllerDelegate, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate>
+@interface SettingsViewController () <UINavigationControllerDelegate, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate>
 @property (nonatomic) BOOL cacheEnabled;
 @property (nonatomic) ZPManager *zipManager;
 @property (nonatomic) ZPEntry *selectedImageEntry;
@@ -21,7 +21,7 @@ static NSString *const ViewControllerImageSegue = @"imageSegue";
 @property (nonatomic) NSByteCountFormatter *byteFormatter;
 @end
 
-@implementation ViewController
+@implementation SettingsViewController
 
 - (void)viewDidLoad
 {
@@ -73,7 +73,6 @@ static NSString *const ViewControllerImageSegue = @"imageSegue";
 - (BOOL)textFieldShouldReturn:(UITextField *)textField
 {
     [textField resignFirstResponder];
-    
     return NO;
 }
 
@@ -183,7 +182,7 @@ static NSString *const ViewControllerImageSegue = @"imageSegue";
     }
     
     __weak ZPManager *zipManager = _zipManager;
-    __weak ViewController *weakSelf = self;
+    __weak SettingsViewController *weakSelf = self;
     
     [_zipManager loadContentWithCompletionBlock:^(long long fileLength, NSArray *entries, NSError *error) {
         if (error) {
