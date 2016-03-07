@@ -7,31 +7,38 @@
 //
 
 #import "ZipEntryViewController.h"
+#import "ZPManager.h"
+#import "UIViewController+Alerts.h"
 
 @interface ZipEntryViewController ()
+
+@property (weak,nonatomic) IBOutlet UIImageView *imageView;
 
 @end
 
 @implementation ZipEntryViewController
 
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    // Do any additional setup after loading the view.
+
+- (void)viewWillAppear:(BOOL)animated   {
+    
+    [super viewWillAppear:animated];
+    
+    //TODO: Progress reporting
+    
+    [_zipManager loadDataWithFilePath:_selectedZipEntry.filePath completionBlock:^(NSData *data, NSError *error) {
+        if (error) {
+            [self alertError:error];
+        } else {
+            _imageView.image = [[UIImage alloc] initWithData:data];
+        }
+    }];
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
+#pragma mark - Alert
 
-/*
-#pragma mark - Navigation
-
-// In a storyboard-based application, you will often want to do a little preparation before navigation
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    // Get the new view controller using [segue destinationViewController].
-    // Pass the selected object to the new view controller.
+- (void)alertError:(NSError *)error
+{
+    [self alertWithErrorMessage:[error localizedDescription]];
 }
-*/
 
 @end

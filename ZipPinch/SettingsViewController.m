@@ -9,29 +9,33 @@
 #import "SettingsViewController.h"
 #import "ZPManager.h"
 
-static NSString *const ViewControllerEntriesSegue = @"entriesSegue";
-static NSString *const ViewControllerImageSegue = @"imageSegue";
+#import "ZipTableViewController.h"
+#import "UIViewController+Alerts.h"
 
-@interface SettingsViewController () <UINavigationControllerDelegate, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate>
+
+static NSString *const ViewControllerEntriesSegue = @"entriesSegue";
+
+@interface SettingsViewController () <UITextFieldDelegate>
+
+@property (strong, nonatomic) ZPManager *zipManager;
 @property (nonatomic) BOOL cacheEnabled;
-@property (nonatomic) ZPManager *zipManager;
-@property (nonatomic) ZPEntry *selectedImageEntry;
-@property (nonatomic, weak) UITableViewController *tableViewController;
-@property (nonatomic) UIImageView *imageView;
-@property (nonatomic) NSByteCountFormatter *byteFormatter;
+
+@property (weak, nonatomic) IBOutlet UITextField *textField;
+@property (weak, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
+
+- (IBAction)finishEditingTextField:(UITextField *)sender;
+- (IBAction)showHubblePhotos:(UIButton *)sender;
+- (IBAction)updateCacheEnabled:(UISwitch *)sender;
+
 @end
+
 
 @implementation SettingsViewController
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
     _cacheEnabled = YES;
-    _byteFormatter = [NSByteCountFormatter new];
-    
-    self.navigationController.delegate = self;
-    self.textField.delegate = self;
 }
 
 - (IBAction)finishEditingTextField:(UITextField *)sender
@@ -46,11 +50,9 @@ static NSString *const ViewControllerImageSegue = @"imageSegue";
         if (URL && URL.host && [URL.host rangeOfString:@"."].location != NSNotFound) {
             [_activityIndicator startAnimating];
             [self loadZipWithURL:URL];
-            
             return;
         }
     }
-    
     [self alertWithErrorMessage:@"URL not valid"];
 }
 
@@ -79,97 +81,19 @@ static NSString *const ViewControllerImageSegue = @"imageSegue";
 - (void)cancelZipLoading
 {
     [_activityIndicator stopAnimating];
+    //TODO: refactor! The download task should be properly canceled!
     _zipManager = nil;
 }
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
 {
     if ([segue.identifier isEqualToString:ViewControllerEntriesSegue]) {
-        _tableViewController = segue.destinationViewController;
-        _tableViewController.tableView.dataSource = self;
-        _tableViewController.tableView.delegate = self;
-        _tableViewController.title = _zipManager.URL.host;
+        ZipTableViewController* target = segue.destinationViewController;
+        target.zipManager = _zipManager;
+        target.title =_zipManager.URL.host;
     }
 }
 
-- (void)navigationController:(UINavigationController *)navigationController
-       didShowViewController:(UIViewController *)viewController
-                    animated:(BOOL)animated
-{
-    if (_selectedImageEntry && viewController != self && viewController != _tableViewController) {
-        _imageView = nil;
-        
-        [viewController.view.subviews enumerateObjectsUsingBlock:^(UIImageView *imageView, NSUInteger idx, BOOL *stop) {
-            if ([imageView isKindOfClass:[UIImageView class]]) {
-                _imageView = imageView;
-                *stop = YES;
-            }
-        }];
-        
-        if (_imageView) {
-            [_zipManager loadDataWithFilePath:_selectedImageEntry.filePath completionBlock:^(NSData *data, NSError *error) {
-                if (error) {
-                    [self alertError:error];
-                } else {
-                    _imageView.image = [[UIImage alloc] initWithData:data];
-                }
-            }];
-        }
-        
-    } else if (viewController == self) {
-        _imageView = nil;
-        _tableViewController = nil;
-        _selectedImageEntry = nil;
-        _zipManager = nil;
-    }
-}
-
-#pragma mark - Table
-
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
-{
-    return _zipManager.entries.count;
-}
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    static NSString *const cellId = @"cellId";
-    
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellId];
-    
-    if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:cellId];
-    }
-    
-    ZPEntry *entry = _zipManager.entries[indexPath.row];
-    
-    cell.textLabel.text = entry.filePath;
-    cell.detailTextLabel.text = [_byteFormatter stringFromByteCount:entry.sizeCompressed];
-    cell.accessoryType = ([self isImageWithFileName:entry.filePath]
-                          ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone);
-    
-    return cell;
-}
-
-- (BOOL)isImageWithFileName:(NSString *)fileName
-{
-    NSString *extension = [[fileName pathExtension] lowercaseString];
-    
-    return [extension isEqual:@"jpg"] || [extension isEqual:@"png"] || [extension isEqual:@"gif"] || [extension isEqual:@"jpeg"];
-}
-
-- (NSIndexPath *)tableView:(UITableView *)tableView willSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    ZPEntry *entry = _zipManager.entries[indexPath.row];
-    
-    return [self isImageWithFileName:entry.filePath] ? indexPath : nil;
-}
-
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    _selectedImageEntry = _zipManager.entries[indexPath.row];
-    [_tableViewController performSegueWithIdentifier:ViewControllerImageSegue sender:nil];
-}
 
 #pragma mark - ZipPinch
 
@@ -185,40 +109,25 @@ static NSString *const ViewControllerImageSegue = @"imageSegue";
     __weak SettingsViewController *weakSelf = self;
     
     [_zipManager loadContentWithCompletionBlock:^(long long fileLength, NSArray *entries, NSError *error) {
-        if (error) {
-            [weakSelf.activityIndicator stopAnimating];
-            [weakSelf alertError:error];
-            
-            return;
-        }
-        
-        if (weakSelf.zipManager && zipManager == weakSelf.zipManager) {
-            if (entries.count) {
+            if (error) {
                 [weakSelf.activityIndicator stopAnimating];
-                [weakSelf performSegueWithIdentifier:ViewControllerEntriesSegue sender:nil];
+                [weakSelf alertError:error];
                 
-            } else {
-                [weakSelf cancelZipLoading];
-                [weakSelf alertWithErrorMessage:@"Zip empty or not found"];
+                return;
             }
-        }
+            
+            if (weakSelf.zipManager && zipManager == weakSelf.zipManager) {
+                if (entries.count) {
+                    [weakSelf.activityIndicator stopAnimating];
+                    [weakSelf performSegueWithIdentifier:ViewControllerEntriesSegue sender:nil];
+                    
+                } else {
+                    [weakSelf cancelZipLoading];
+                    [weakSelf alertWithErrorMessage:@"Zip empty or not found"];
+                }
+            }
     }];
 }
 
-#pragma mark - Alert
-
-- (void)alertError:(NSError *)error
-{
-    [self alertWithErrorMessage:[error localizedDescription]];
-}
-
-- (void)alertWithErrorMessage:(NSString *)message
-{
-    [[[UIAlertView alloc] initWithTitle:@"Error"
-                                message:message
-                               delegate:nil
-                      cancelButtonTitle:@"OK"
-                      otherButtonTitles:nil] show];
-}
 
 @end

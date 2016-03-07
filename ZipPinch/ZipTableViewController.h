@@ -8,6 +8,10 @@
 
 #import <UIKit/UIKit.h>
 
+@class ZPManager;
+
 @interface ZipTableViewController : UITableViewController
+
+@property (strong, nonatomic) ZPManager *zipManager;
 
 @end

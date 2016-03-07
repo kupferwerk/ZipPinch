@@ -10,12 +10,5 @@
 
 @interface SettingsViewController : UIViewController
 
-@property (weak, nonatomic) IBOutlet UITextField *textField;
-@property (weak, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
-
-- (IBAction)finishEditingTextField:(UITextField *)sender;
-- (IBAction)showHubblePhotos:(UIButton *)sender;
-- (IBAction)updateCacheEnabled:(UISwitch *)sender;
-
 @end
 
