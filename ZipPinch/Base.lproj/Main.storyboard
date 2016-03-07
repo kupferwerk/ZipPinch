@@ -40,12 +40,6 @@
                                     <action selector="showHubblePhotos:" destination="BYZ-38-t0r" eventType="touchUpInside" id="OZO-iD-0Lb"/>
                                 </connections>
                             </button>
-                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Crh-Fw-toV">
-                                <rect key="frame" x="352" y="171" width="51" height="31"/>
-                                <connections>
-                                    <action selector="updateCacheEnabled:" destination="BYZ-38-t0r" eventType="valueChanged" id="akX-d6-MnJ"/>
-                                </connections>
-                            </switch>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Cache Enabled" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SeQ-uK-6ek">
                                 <rect key="frame" x="199" y="176" width="117" height="21"/>
                                 <constraints>
@@ -56,6 +50,12 @@
                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Crh-Fw-toV">
+                                <rect key="frame" x="352" y="171" width="51" height="31"/>
+                                <connections>
+                                    <action selector="updateCacheEnabled:" destination="BYZ-38-t0r" eventType="valueChanged" id="akX-d6-MnJ"/>
+                                </connections>
+                            </switch>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                         <constraints>
@@ -76,6 +76,7 @@
                     <nil key="simulatedStatusBarMetrics"/>
                     <connections>
                         <outlet property="activityIndicator" destination="ve8-Ql-B5P" id="bJv-mv-7Qc"/>
+                        <outlet property="cacheEnabledSwitch" destination="Crh-Fw-toV" id="KIi-Cq-bwH"/>
                         <outlet property="textField" destination="BiD-bN-ZCa" id="v21-5n-HC4"/>
                         <segue destination="suH-xL-JSa" kind="show" identifier="entriesSegue" id="ekg-VW-WyN"/>
                     </connections>

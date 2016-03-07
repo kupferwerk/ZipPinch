@@ -79,7 +79,4 @@ static NSString *const ViewControllerImageSegue = @"imageSegue";
     return [extension isEqual:@"jpg"] || [extension isEqual:@"png"] || [extension isEqual:@"gif"] || [extension isEqual:@"jpeg"];
 }
 
-
-
-
 @end

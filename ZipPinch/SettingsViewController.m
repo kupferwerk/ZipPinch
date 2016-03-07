@@ -18,8 +18,8 @@ static NSString *const ViewControllerEntriesSegue = @"entriesSegue";
 @interface SettingsViewController () <UITextFieldDelegate>
 
 @property (strong, nonatomic) ZPManager *zipManager;
-@property (nonatomic) BOOL cacheEnabled;
 
+@property (weak, nonatomic) IBOutlet UISwitch *cacheEnabledSwitch;
 @property (weak, nonatomic) IBOutlet UITextField *textField;
 @property (weak, nonatomic) IBOutlet UIActivityIndicatorView *activityIndicator;
 
@@ -32,11 +32,16 @@ static NSString *const ViewControllerEntriesSegue = @"entriesSegue";
 
 @implementation SettingsViewController
 
-- (void)viewDidLoad
+- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
 {
-    [super viewDidLoad];
-    _cacheEnabled = YES;
+    if ([segue.identifier isEqualToString:ViewControllerEntriesSegue]) {
+        ZipTableViewController* target = segue.destinationViewController;
+        target.zipManager = _zipManager;
+        target.title =_zipManager.URL.host;
+    }
 }
+
+#pragma mark - Actions
 
 - (IBAction)finishEditingTextField:(UITextField *)sender
 {
@@ -49,7 +54,7 @@ static NSString *const ViewControllerEntriesSegue = @"entriesSegue";
         
         if (URL && URL.host && [URL.host rangeOfString:@"."].location != NSNotFound) {
             [_activityIndicator startAnimating];
-            [self loadZipWithURL:URL];
+            [self loadZipWithURL:URL useCache: self.cacheEnabledSwitch.on];
             return;
         }
     }
@@ -60,11 +65,6 @@ static NSString *const ViewControllerEntriesSegue = @"entriesSegue";
 {
     _textField.text = @"http://www.spacetelescope.org/static/images/zip/top100/top100-large.zip";
     [self finishEditingTextField:_textField];
-}
-
-- (IBAction)updateCacheEnabled:(UISwitch *)sender
-{
-    _cacheEnabled = sender.on;
 }
 
 - (void)textFieldDidBeginEditing:(UITextField *)textField
@@ -85,23 +85,14 @@ static NSString *const ViewControllerEntriesSegue = @"entriesSegue";
     _zipManager = nil;
 }
 
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender
-{
-    if ([segue.identifier isEqualToString:ViewControllerEntriesSegue]) {
-        ZipTableViewController* target = segue.destinationViewController;
-        target.zipManager = _zipManager;
-        target.title =_zipManager.URL.host;
-    }
-}
-
 
 #pragma mark - ZipPinch
 
-- (void)loadZipWithURL:(NSURL *)URL
+- (void)loadZipWithURL:(NSURL *)URL useCache:(BOOL)useCache
 {
-    _zipManager = [[ZPManager alloc] initWithURL:URL];
+    self.zipManager = [[ZPManager alloc] initWithURL:URL];
     
-    if (_cacheEnabled) {
+    if (useCache) {
         [_zipManager enableCacheAtPath:nil];
     }
     
@@ -112,7 +103,6 @@ static NSString *const ViewControllerEntriesSegue = @"entriesSegue";
             if (error) {
                 [weakSelf.activityIndicator stopAnimating];
                 [weakSelf alertError:error];
-                
                 return;
             }
             

@@ -34,11 +34,4 @@
     }];
 }
 
-#pragma mark - Alert
-
-- (void)alertError:(NSError *)error
-{
-    [self alertWithErrorMessage:[error localizedDescription]];
-}
-
 @end
