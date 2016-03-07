@@ -7,8 +7,7 @@
 //
 
 #import "ZPArchive.h"
-#import "AFHTTPRequestOperation.h"
-#import "ZPURLResponseConnectionOperation.h"
+//#import "ZPURLResponseConnectionOperation.h"
 
 #include <zlib.h>
 #include <ctype.h>
@@ -70,8 +69,22 @@ struct zip_file_header {
     uint16 extraFieldLength;
 };
 
-@interface ZPArchive ()
+@interface ZPArchive () <NSURLSessionDelegate, NSURLSessionTaskDelegate>
+
+/**
+ *  The fileLength of the encrypted Archive
+ */
 @property (nonatomic) long long fileLength;
+
+/**
+ *  <#Description#>
+ */
+@property (strong, nonatomic) NSURLSessionDataTask* dataTask;
+
+
+@property (copy, nonatomic) ZPArchiveArchiveCompletionBlock archiveCompletionBlock;
+
+
 @end
 
 @implementation ZPArchive
@@ -85,30 +98,29 @@ struct zip_file_header {
         return;
     }
     
+    self.archiveCompletionBlock = completionBlock;
+    
     _fileLength = 0;
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
     request.cachePolicy = NSURLRequestReloadIgnoringCacheData;
+
+    //if there is a data Task already running, cancel it
+    if (self.dataTask)  {
+        [self.dataTask cancel];
+    }
+
+    //Setup a new connection, set myself as response delegate
+    //Note that this creates a STRONG reference to the delegate
+    NSURLSessionConfiguration* configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    NSURLSession* session = [NSURLSession sessionWithConfiguration:configuration
+                                                          delegate:self
+                                                     delegateQueue:nil];
     
-    ZPURLResponseConnectionOperation *operation = [[ZPURLResponseConnectionOperation alloc] initWithRequest:request];
+    self.dataTask = [session dataTaskWithRequest:request];
+    [self.dataTask resume];
+    [session finishTasksAndInvalidate]; //This frees the delegate as soon as the dataTask is finished and all delegate calls were done
     
-    __weak ZPArchive *weakSelf = self;
-    __weak ZPURLResponseConnectionOperation *weakOperation = operation;
-    
-    [operation setCompletionBlock:^{
-        if (weakOperation.responseStatusCode == 200) {
-            weakSelf.fileLength = weakOperation.fileLength;
-            [weakSelf findCentralDirectoryWithURL:URL
-                                   withFileLength:(NSUInteger)weakOperation.fileLength
-                                  completionBlock:completionBlock];
-            
-        } else {
-            NSLog(@"[ZipPinch] Fetch URL: failed. %@", URL);
-            completionBlock(0, nil, weakOperation.error);
-        }
-    }];
-    
-    [operation start];
 }
 
 #pragma mark - Zip Content
@@ -182,6 +194,15 @@ idx += sizeof(end_record._field)
               }];
 }
 
+
+/**
+ *  Parses the central directory of the URL
+ *
+ *  @param URL             the URL to fetch the directory from
+ *  @param offset          the offset to the zip directory
+ *  @param length          the length of the zip directory block
+ *  @param completionBlock the block to handle the result
+ */
 - (void)parseCentralDirectoryWithURL:(NSURL *)URL
                           withOffset:(NSInteger)offset
                           withLength:(NSUInteger)length
@@ -379,22 +400,47 @@ idx += sizeof(file_record._field)
     [request setValue:rangeValue forHTTPHeaderField:@"Range"];
     request.cachePolicy = NSURLRequestReloadIgnoringCacheData;
     
-    AFHTTPRequestOperation *operation = [[AFHTTPRequestOperation alloc] initWithRequest:request];
     
-    [operation setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
-        if (responseObject) {
-            NSData *data = responseObject;
-            completionBlock((const char *)[data bytes], [data length], nil);
-        } else {
-            completionBlock(nil, 0, [NSError errorWithDomain:ZPEntryErrorDomain code:ZPEntryErrorCodeResponseEmpty userInfo:nil]);
-        }
-        
-    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
-        NSLog(@"[ZipPinch] %@", error);
-        completionBlock(nil, 0, error);
-    }];
+    NSURLSessionConfiguration* configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    configuration.HTTPMaximumConnectionsPerHost = 1;
+    configuration.timeoutIntervalForResource = 7200000;
     
-    [operation start];
+    NSURLSession* session = [NSURLSession sessionWithConfiguration:configuration];
+    NSURLSessionDownloadTask* task = [session downloadTaskWithRequest:request
+                                                completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+                                                    if (!error)  {
+                                                        //temporary adjustment to keep interface
+                                                        NSData* data = [NSData dataWithContentsOfURL:location];
+                                                        completionBlock((const char *)[data bytes], [data length], nil);
+                                                    }
+                                                    else {
+                                                        completionBlock(nil, 0, error);
+                                                    }
+                                                }];
+    [task resume];
+}
+
+
+#pragma mark - <NSURLSessionDataDelegate>
+
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+didReceiveResponse:(NSURLResponse *)response
+ completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler {
+    
+    [dataTask cancel];
+
+    if ([(NSHTTPURLResponse*)response statusCode] == 200)  {
+        self.fileLength = response.expectedContentLength;
+        [self findCentralDirectoryWithURL:response.URL
+                               withFileLength:response.expectedContentLength
+                              completionBlock:self.archiveCompletionBlock];
+    }
+    else {
+        NSLog(@"[ZipPinch] Fetch URL: failed. %@", response.URL);
+        self.archiveCompletionBlock(0, nil, nil); //TODO: create error!!!
+    }
+
 }
 
 @end
