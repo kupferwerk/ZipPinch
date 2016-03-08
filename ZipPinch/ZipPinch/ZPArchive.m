@@ -7,7 +7,6 @@
 //
 
 #import "ZPArchive.h"
-//#import "ZPURLResponseConnectionOperation.h"
 
 #include <zlib.h>
 #include <ctype.h>
@@ -77,7 +76,7 @@ struct zip_file_header {
 @property (nonatomic) long long fileLength;
 
 /**
- *  <#Description#>
+ *  the data task to probe a zip file.
  */
 @property (strong, nonatomic) NSURLSessionDataTask* dataTask;
 
@@ -106,6 +105,7 @@ struct zip_file_header {
     request.cachePolicy = NSURLRequestReloadIgnoringCacheData;
 
     //if there is a data Task already running, cancel it
+    //TODO: Doesn't look right, as soon as a second request is initiated, any previous one is canceled.
     if (self.dataTask)  {
         [self.dataTask cancel];
     }
@@ -120,11 +120,17 @@ struct zip_file_header {
     self.dataTask = [session dataTaskWithRequest:request];
     [self.dataTask resume];
     [session finishTasksAndInvalidate]; //This frees the delegate as soon as the dataTask is finished and all delegate calls were done
-    
 }
 
 #pragma mark - Zip Content
 
+/**
+ *  Fetches (only) the Zip Directory from the URL
+ *
+ *  @param URL             the URL of the zip file
+ *  @param length          the expected length of the zip file
+ *  @param completionBlock the block to handle the result
+ */
 - (void)findCentralDirectoryWithURL:(NSURL *)URL
                      withFileLength:(NSUInteger)length
                     completionBlock:(ZPArchiveArchiveCompletionBlock)completionBlock
@@ -196,7 +202,7 @@ idx += sizeof(end_record._field)
 
 
 /**
- *  Parses the central directory of the URL
+ *  Parses the central directory of the URL and builds the array of entries in the zip
  *
  *  @param URL             the URL to fetch the directory from
  *  @param offset          the offset to the zip directory
@@ -389,6 +395,14 @@ idx += sizeof(file_record._field)
 
 #pragma mark -
 
+/**
+ *  Start a download task for a range of bytes
+ *
+ *  @param URL             the target URL
+ *  @param rangeFrom       the download starts here...
+ *  @param rangeTo         ...and ends here
+ *  @param completionBlock the block to handle the result
+ */
 - (void)startRequestWithURL:(NSURL *)URL
                   rangeFrom:(NSUInteger)rangeFrom
                 rangeLength:(NSUInteger)rangeTo
@@ -400,10 +414,9 @@ idx += sizeof(file_record._field)
     [request setValue:rangeValue forHTTPHeaderField:@"Range"];
     request.cachePolicy = NSURLRequestReloadIgnoringCacheData;
     
-    
     NSURLSessionConfiguration* configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
-    configuration.HTTPMaximumConnectionsPerHost = 1;
-    configuration.timeoutIntervalForResource = 7200000;
+    configuration.HTTPMaximumConnectionsPerHost = 1;  //Serialize downloads to a single host
+    configuration.timeoutIntervalForResource = 7200000; //
     
     NSURLSession* session = [NSURLSession sessionWithConfiguration:configuration];
     NSURLSessionDownloadTask* task = [session downloadTaskWithRequest:request
@@ -423,11 +436,21 @@ idx += sizeof(file_record._field)
 
 #pragma mark - <NSURLSessionDataDelegate>
 
+/**
+ *  Handling the first response of a data task request. NOTE: This stops the request immediately! The method is used here to inspect the response for availability and the expected length, not to download data. Downloading data uses NSURLSessionDownloadTask tasks!
+ *
+ *  @param session           the session
+ *  @param dataTask          the dataTask
+ *  @param response          the server response
+ *  @param completionHandler the block to handle the result
+ */
 - (void)URLSession:(NSURLSession *)session
           dataTask:(NSURLSessionDataTask *)dataTask
 didReceiveResponse:(NSURLResponse *)response
  completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler {
     
+    
+    //TODO: Check if dataTask is a prober task!
     [dataTask cancel];
 
     if ([(NSHTTPURLResponse*)response statusCode] == 200)  {
@@ -438,9 +461,15 @@ didReceiveResponse:(NSURLResponse *)response
     }
     else {
         NSLog(@"[ZipPinch] Fetch URL: failed. %@", response.URL);
-        self.archiveCompletionBlock(0, nil, nil); //TODO: create error!!!
+        NSError* error = [NSError errorWithDomain:@"HTTP Error"
+                                             code:[(NSHTTPURLResponse*)response statusCode]
+                                         userInfo:nil];
+        self.archiveCompletionBlock(0, nil, error);
     }
-
 }
+
+
+
+
 
 @end

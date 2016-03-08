@@ -23,6 +23,7 @@
 		A1392DCC1C8D85870077CE73 /* ZipTableViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A1392DCB1C8D85870077CE73 /* ZipTableViewController.m */; };
 		A1392DCF1C8D85BC0077CE73 /* ZipEntryViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A1392DCE1C8D85BC0077CE73 /* ZipEntryViewController.m */; };
 		A1392DD11C8D89070077CE73 /* ZipPinch.podspec in Resources */ = {isa = PBXBuildFile; fileRef = A1392DD01C8D89070077CE73 /* ZipPinch.podspec */; };
+		A1392DD41C8D91B20077CE73 /* UIViewController+Alerts.m in Sources */ = {isa = PBXBuildFile; fileRef = A1392DD31C8D91B20077CE73 /* UIViewController+Alerts.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +53,8 @@
 		A1392DCD1C8D85BC0077CE73 /* ZipEntryViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZipEntryViewController.h; sourceTree = "<group>"; };
 		A1392DCE1C8D85BC0077CE73 /* ZipEntryViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZipEntryViewController.m; sourceTree = "<group>"; };
 		A1392DD01C8D89070077CE73 /* ZipPinch.podspec */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ZipPinch.podspec; sourceTree = "<group>"; };
+		A1392DD21C8D91B20077CE73 /* UIViewController+Alerts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIViewController+Alerts.h"; sourceTree = "<group>"; };
+		A1392DD31C8D91B20077CE73 /* UIViewController+Alerts.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIViewController+Alerts.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +102,8 @@
 				A1392DCB1C8D85870077CE73 /* ZipTableViewController.m */,
 				A1392DCD1C8D85BC0077CE73 /* ZipEntryViewController.h */,
 				A1392DCE1C8D85BC0077CE73 /* ZipEntryViewController.m */,
+				A1392DD21C8D91B20077CE73 /* UIViewController+Alerts.h */,
+				A1392DD31C8D91B20077CE73 /* UIViewController+Alerts.m */,
 				4A8F43351A161DB800F7E579 /* Images.xcassets */,
 				4A8F43371A161DB800F7E579 /* LaunchScreen.xib */,
 				4A8F43281A161DB800F7E579 /* Supporting Files */,
@@ -214,6 +219,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4A8F43311A161DB800F7E579 /* SettingsViewController.m in Sources */,
+				A1392DD41C8D91B20077CE73 /* UIViewController+Alerts.m in Sources */,
 				4ADB75C51A39F7200061A2B7 /* ZPEntry+NSData.m in Sources */,
 				4A8F432E1A161DB800F7E579 /* AppDelegate.m in Sources */,
 				4ADB75C41A39F7200061A2B7 /* ZPEntry.m in Sources */,
@@ -331,6 +337,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_FILE = ZipPinch/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.kupferwerk.ZipPinchDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -341,6 +348,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_FILE = ZipPinch/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.kupferwerk.ZipPinchDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

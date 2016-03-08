@@ -24,6 +24,7 @@
                                 <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="URL" returnKeyType="go" enablesReturnKeyAutomatically="YES"/>
                                 <connections>
                                     <action selector="finishEditingTextField:" destination="BYZ-38-t0r" eventType="editingDidEnd" id="610-xu-fO0"/>
+                                    <outlet property="delegate" destination="BYZ-38-t0r" id="22g-eJ-leh"/>
                                 </connections>
                             </textField>
                             <activityIndicatorView hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="ve8-Ql-B5P">
@@ -39,12 +40,6 @@
                                     <action selector="showHubblePhotos:" destination="BYZ-38-t0r" eventType="touchUpInside" id="OZO-iD-0Lb"/>
                                 </connections>
                             </button>
-                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Crh-Fw-toV">
-                                <rect key="frame" x="352" y="171" width="51" height="31"/>
-                                <connections>
-                                    <action selector="updateCacheEnabled:" destination="BYZ-38-t0r" eventType="valueChanged" id="akX-d6-MnJ"/>
-                                </connections>
-                            </switch>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Cache Enabled" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="SeQ-uK-6ek">
                                 <rect key="frame" x="199" y="176" width="117" height="21"/>
                                 <constraints>
@@ -55,6 +50,12 @@
                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Crh-Fw-toV">
+                                <rect key="frame" x="352" y="171" width="51" height="31"/>
+                                <connections>
+                                    <action selector="updateCacheEnabled:" destination="BYZ-38-t0r" eventType="valueChanged" id="akX-d6-MnJ"/>
+                                </connections>
+                            </switch>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                         <constraints>
@@ -75,6 +76,7 @@
                     <nil key="simulatedStatusBarMetrics"/>
                     <connections>
                         <outlet property="activityIndicator" destination="ve8-Ql-B5P" id="bJv-mv-7Qc"/>
+                        <outlet property="cacheEnabledSwitch" destination="Crh-Fw-toV" id="KIi-Cq-bwH"/>
                         <outlet property="textField" destination="BiD-bN-ZCa" id="v21-5n-HC4"/>
                         <segue destination="suH-xL-JSa" kind="show" identifier="entriesSegue" id="ekg-VW-WyN"/>
                     </connections>
@@ -83,10 +85,10 @@
             </objects>
             <point key="canvasLocation" x="1393" y="451"/>
         </scene>
-        <!--Table View Controller-->
+        <!--Zip Table View Controller-->
         <scene sceneID="zli-OM-Pvg">
             <objects>
-                <tableViewController id="suH-xL-JSa" sceneMemberID="viewController">
+                <tableViewController id="suH-xL-JSa" customClass="ZipTableViewController" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="22" sectionFooterHeight="22" id="utr-hh-vIx">
                         <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -130,10 +132,10 @@
             </objects>
             <point key="canvasLocation" x="2076" y="451"/>
         </scene>
-        <!--View Controller-->
+        <!--Zip Entry View Controller-->
         <scene sceneID="FN2-7O-N8e">
             <objects>
-                <viewController id="qQ3-BW-ueL" sceneMemberID="viewController">
+                <viewController id="qQ3-BW-ueL" customClass="ZipEntryViewController" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="Tlf-7K-b2c"/>
                         <viewControllerLayoutGuide type="bottom" id="rGJ-OS-Ww2"/>
@@ -159,6 +161,9 @@
                             <constraint firstItem="Fzw-RB-zgw" firstAttribute="top" secondItem="Tlf-7K-b2c" secondAttribute="bottom" id="e2Z-jQ-WRw"/>
                         </constraints>
                     </view>
+                    <connections>
+                        <outlet property="imageView" destination="Fzw-RB-zgw" id="Gzp-TT-e0q"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="RZL-0i-E7Y" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>

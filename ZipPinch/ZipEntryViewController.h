@@ -8,6 +8,12 @@
 
 #import <UIKit/UIKit.h>
 
+@class ZPManager;
+@class ZPEntry;
+
 @interface ZipEntryViewController : UIViewController
+
+@property (strong, nonatomic) ZPManager *zipManager;
+@property (nonatomic) ZPEntry *selectedZipEntry;
 
 @end

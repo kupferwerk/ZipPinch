@@ -79,9 +79,11 @@ static NSString *const ZPManagerCacheEntriesKey = @"entries";
             
             if (_entries) {
                 if (completionBlock) {
-                    completionBlock(_fileLength, _entries, nil);
+                    dispatch_async(dispatch_get_main_queue(), ^(void){
+                        completionBlock(_fileLength, _entries, nil);
+                        
+                    });
                 }
-                
                 return;
             }
         }
@@ -95,7 +97,9 @@ static NSString *const ZPManagerCacheEntriesKey = @"entries";
     [_archive fetchArchiveWithURL:_URL completionBlock:^(long long fileLength, NSArray *entries, NSError *error) {
         if (error) {
             if (completionBlock) {
-                completionBlock(0, nil, error);
+                dispatch_async(dispatch_get_main_queue(), ^(void){
+                    completionBlock(0, nil, error);
+                });
             }
             
             return;
@@ -124,26 +128,33 @@ static NSString *const ZPManagerCacheEntriesKey = @"entries";
         }
         
         if (completionBlock) {
-            completionBlock(fileLength, weakSelf.entries, nil);
+            dispatch_async(dispatch_get_main_queue(), ^(void){
+                completionBlock(fileLength, weakSelf.entries, nil);
+            });
         }
     }];
 }
+
 
 - (void)loadDataWithFilePath:(NSString *)filePath completionBlock:(ZPManagerDataCompletionBlock)completionBlock
 {
     [self loadDataWithEntry:[self entryWithFilePath:filePath] completionBlock:completionBlock];
 }
 
+
 - (void)loadDataWithURL:(NSURL *)URL completionBlock:(ZPManagerDataCompletionBlock)completionBlock
 {
     [self loadDataWithEntry:[self entryWithURL:URL] completionBlock:completionBlock];
 }
 
+
 - (void)loadDataWithEntry:(ZPEntry *)entry completionBlock:(ZPManagerDataCompletionBlock)completionBlock
 {
     if (entry.data) {
         if (completionBlock) {
-            completionBlock(entry.data, nil);
+            dispatch_async(dispatch_get_main_queue(), ^(void){
+                completionBlock(entry.data, nil);
+            });
         }
         
         return;
@@ -159,7 +170,9 @@ static NSString *const ZPManagerCacheEntriesKey = @"entries";
             NSData *data = [NSData dataWithContentsOfFile:path];
             
             if (completionBlock) {
-                completionBlock(data, nil);
+                dispatch_async(dispatch_get_main_queue(), ^(void){
+                    completionBlock(data, nil);
+                });
             }
             
             return;
@@ -182,7 +195,9 @@ static NSString *const ZPManagerCacheEntriesKey = @"entries";
         }
         
         if (completionBlock) {
-            completionBlock(error ? nil : entry.data, error);
+            dispatch_async(dispatch_get_main_queue(), ^(void){
+                completionBlock(error ? nil : entry.data, error);
+            });
         }
     }];
 }
