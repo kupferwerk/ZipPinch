@@ -456,7 +456,7 @@ didReceiveResponse:(NSURLResponse *)response
     if ([(NSHTTPURLResponse*)response statusCode] == 200)  {
         self.fileLength = response.expectedContentLength;
         [self findCentralDirectoryWithURL:response.URL
-                               withFileLength:response.expectedContentLength
+                               withFileLength:(NSUInteger)response.expectedContentLength
                               completionBlock:self.archiveCompletionBlock];
     }
     else {
