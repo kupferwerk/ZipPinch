@@ -12,11 +12,21 @@
 
 #pragma mark - Alert
 
+/**
+ *  Shows the error in a UIAlertView
+ *
+ *  @param error the error, which localized description is displayed
+ */
 - (void)alertError:(NSError *)error
 {
     [self alertWithErrorMessage:[error localizedDescription]];
 }
 
+/**
+ *  Shows the message in an UIAlertView with the title "Error" and an OK button to vlose the alert 
+ *
+ *  @param message the message to show
+ */
 - (void)alertWithErrorMessage:(NSString *)message
 {
     [[[UIAlertView alloc] initWithTitle:@"Error"

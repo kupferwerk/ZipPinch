@@ -25,7 +25,6 @@ static NSString *const ViewControllerEntriesSegue = @"entriesSegue";
 
 - (IBAction)finishEditingTextField:(UITextField *)sender;
 - (IBAction)showHubblePhotos:(UIButton *)sender;
-- (IBAction)updateCacheEnabled:(UISwitch *)sender;
 
 @end
 

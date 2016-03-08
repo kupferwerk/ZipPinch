@@ -135,15 +135,18 @@ static NSString *const ZPManagerCacheEntriesKey = @"entries";
     }];
 }
 
+
 - (void)loadDataWithFilePath:(NSString *)filePath completionBlock:(ZPManagerDataCompletionBlock)completionBlock
 {
     [self loadDataWithEntry:[self entryWithFilePath:filePath] completionBlock:completionBlock];
 }
 
+
 - (void)loadDataWithURL:(NSURL *)URL completionBlock:(ZPManagerDataCompletionBlock)completionBlock
 {
     [self loadDataWithEntry:[self entryWithURL:URL] completionBlock:completionBlock];
 }
+
 
 - (void)loadDataWithEntry:(ZPEntry *)entry completionBlock:(ZPManagerDataCompletionBlock)completionBlock
 {
