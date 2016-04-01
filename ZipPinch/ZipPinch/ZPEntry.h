@@ -22,5 +22,6 @@
 @property (nonatomic) NSInteger extraFieldLength;
 
 @property (nonatomic, strong) NSData *data;
+@property (nonatomic, strong) NSData *resumeData;
 
 @end

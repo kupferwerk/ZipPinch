@@ -215,7 +215,6 @@ idx += sizeof(end_record._field)
                      completionBlock:(ZPArchiveArchiveCompletionBlock)completionBlock
 {
     static int const zipPrefixLength = 46;
-    
     [self startRequestWithURL:URL
                     rangeFrom:offset
                   rangeLength:(offset + length - 1)
@@ -285,10 +284,10 @@ idx += sizeof(dir_record._field)
 
 #pragma mark - Fetch File
 
-- (void)fetchFile:(ZPEntry *)entry completionBlock:(ZPArchiveFileCompletionBlock)completionBlock
+- (NSURLSessionDownloadTask*)fetchFile:(ZPEntry *)entry completionBlock:(ZPArchiveFileCompletionBlock)completionBlock
 {
     if (!completionBlock) {
-        return;
+        return nil;
     }
     
     entry.data = nil;
@@ -297,101 +296,23 @@ idx += sizeof(dir_record._field)
     // from the centralDirectory and the fileEntry header...
     NSInteger length = sizeof(struct zip_file_header) + entry.sizeCompressed + entry.filenameLength + entry.extraFieldLength;
     
-    [self startRequestWithURL:entry.URL
-                    rangeFrom:entry.offset
-                  rangeLength:(entry.offset + length + 16)
-              completionBlock:^(const char *cptr, NSUInteger len, NSError *error) {
-                  
-                  NSLog(@"[ZipPinch] Fetch File: ended. Received: %lu", (unsigned long)len);
-                  
-                  if (!cptr || len == 0 || error) {
-                      completionBlock(entry, error);
-                      
-                      return;
-                  }
-                  
-                  struct zip_file_header file_record;
-                  int idx = 0;
-                  
-                  // Extract fields with a macro, if we would need to swap byteorder this would be the place
-#define GETFIELD( _field ) \
-memcpy(&file_record._field, &cptr[idx], sizeof(file_record._field)); \
-idx += sizeof(file_record._field)
-                  GETFIELD( localFileHeaderSignature );
-                  GETFIELD( versionNeededToExtract );
-                  GETFIELD( generalPurposeBitFlag );
-                  GETFIELD( compressionMethod );
-                  GETFIELD( fileLastModificationTime );
-                  GETFIELD( fileLastModificationDate );
-                  GETFIELD( CRC32 );
-                  GETFIELD( compressedSize );
-                  GETFIELD( uncompressedSize );
-                  GETFIELD( fileNameLength );
-                  GETFIELD( extraFieldLength );
-#undef GETFIELD
-                  
-                  if (entry.method == Z_DEFLATED) {
-                      z_stream zstream;
-                      int ret;
-                      
-                      zstream.zalloc = Z_NULL;
-                      zstream.zfree = Z_NULL;
-                      zstream.opaque = Z_NULL;
-                      zstream.avail_in = 0;
-                      zstream.next_in = Z_NULL;
-                      
-                      ret = inflateInit2(&zstream, -MAX_WBITS);
-                      
-                      if (ret != Z_OK) {
-                          return;
-                      }
-                      
-                      zstream.avail_in = (uInt)entry.sizeCompressed;
-                      zstream.next_in = (unsigned char *)&cptr[idx + file_record.fileNameLength + file_record.extraFieldLength];
-                      
-                      unsigned char *ptr = malloc(entry.sizeUncompressed);
-                      
-                      zstream.avail_out = (unsigned int)entry.sizeUncompressed;
-                      zstream.next_out = ptr;
-                      
-                      ret = inflate(&zstream, Z_SYNC_FLUSH);
-                      
-                      entry.data = [NSData dataWithBytes:ptr length:entry.sizeUncompressed];
-                      
-                      NSLog(@"[ZipPinch] Uncompressed bytes: %li", (long)zstream.avail_in);
-                      
-                      free(ptr);
-                      
-                      switch (ret) {
-                          case Z_NEED_DICT: {
-                              NSLog(@"[ZipPinch] Uncompressed Data Error");
-                              break;
-                          }
-                              
-                          case Z_DATA_ERROR: {
-                              NSLog(@"[ZipPinch] Uncompressed Error");
-                              break;
-                          }
-                              
-                          case Z_MEM_ERROR: {
-                              NSLog(@"[ZipPinch] Uncompressed Memory Error");
-                              break;
-                          }
-                      }
-                      
-                      inflateEnd(&zstream);
-                      
-                  } else if (entry.method == 0) {
-                      unsigned char *ptr = (unsigned char *)&cptr[idx + file_record.fileNameLength + file_record.extraFieldLength];
-                      entry.data = [NSData dataWithBytes:ptr length:entry.sizeUncompressed];
-                      
-                  } else {
-                      NSLog(@"[ZipPinch] Unimplemented uncompress method: %li", (long)entry.method);
-                  }
-                  
-                  completionBlock(entry, nil);
-              }];
+    NSURLSessionDownloadTask* downloadTask;
+    ZPArchiveRequestCompletionBlock requestCompletionBlock = [self unzipFile:entry completionBlock:completionBlock];
+    
+    if ( entry.resumeData)  {
+        downloadTask = [self resumeRequestWithResumeData: entry.resumeData
+                                         completionBlock: requestCompletionBlock];
+    }
+    else {
+        downloadTask = [self startRequestWithURL:entry.URL
+                                       rangeFrom:entry.offset
+                                     rangeLength:(entry.offset + length + 16)
+                                 completionBlock: requestCompletionBlock];
+    }
+    
+    return downloadTask;
 }
+
 
 #pragma mark -
 
@@ -403,7 +324,7 @@ idx += sizeof(file_record._field)
  *  @param rangeTo         ...and ends here
  *  @param completionBlock the block to handle the result
  */
-- (void)startRequestWithURL:(NSURL *)URL
+- (NSURLSessionDownloadTask*)startRequestWithURL:(NSURL *)URL
                   rangeFrom:(NSUInteger)rangeFrom
                 rangeLength:(NSUInteger)rangeTo
             completionBlock:(ZPArchiveRequestCompletionBlock)completionBlock
@@ -418,7 +339,7 @@ idx += sizeof(file_record._field)
     configuration.HTTPMaximumConnectionsPerHost = 1;  //Serialize downloads to a single host
     configuration.timeoutIntervalForResource = 7200000; //
     
-    NSURLSession* session = [NSURLSession sessionWithConfiguration:configuration];
+    NSURLSession* session = [NSURLSession sessionWithConfiguration:configuration delegate:self delegateQueue:nil];
     NSURLSessionDownloadTask* task = [session downloadTaskWithRequest:request
                                                 completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
                                                     if (!error)  {
@@ -431,7 +352,45 @@ idx += sizeof(file_record._field)
                                                     }
                                                 }];
     [task resume];
+    return task;
 }
+
+
+
+/**
+ *  Start a download task for a range of bytes
+ *
+ *  @param URL             the target URL
+ *  @param rangeFrom       the download starts here...
+ *  @param rangeTo         ...and ends here
+ *  @param completionBlock the block to handle the result
+ */
+- (NSURLSessionDownloadTask*)resumeRequestWithResumeData:(NSData*) resumeData
+                                 completionBlock:(ZPArchiveRequestCompletionBlock)completionBlock
+{
+    NSURLSessionConfiguration* configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    configuration.HTTPMaximumConnectionsPerHost = 1;  //Serialize downloads to a single host
+    configuration.timeoutIntervalForResource = 7200000; //
+    
+    NSURLSession* session = [NSURLSession sessionWithConfiguration:configuration delegate:self delegateQueue:nil];
+    NSURLSessionDownloadTask* task = [session downloadTaskWithResumeData:resumeData
+                                                       completionHandler:^(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+                                                           if (!error)  {
+                                                               //temporary adjustment to keep interface
+                                                               NSData* data = [NSData dataWithContentsOfURL:location];
+                                                               completionBlock((const char *)[data bytes], [data length], nil);
+                                                           }
+                                                           else {
+                                                               completionBlock(nil, 0, error);
+                                                           }
+                                                       }];
+    [task resume];
+    return task;
+}
+
+
+
+
 
 
 #pragma mark - <NSURLSessionDataDelegate>
@@ -449,25 +408,123 @@ idx += sizeof(file_record._field)
 didReceiveResponse:(NSURLResponse *)response
  completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler {
     
-    
-    //TODO: Check if dataTask is a prober task!
-    [dataTask cancel];
-
-    if ([(NSHTTPURLResponse*)response statusCode] == 200)  {
-        self.fileLength = response.expectedContentLength;
-        [self findCentralDirectoryWithURL:response.URL
+    //Check if dataTask is a prober task!
+    if (dataTask == self.dataTask)  {
+        [dataTask cancel];
+        self.dataTask = nil;
+        if ([(NSHTTPURLResponse*)response statusCode] == 200)  {
+            self.fileLength = response.expectedContentLength;
+            [self findCentralDirectoryWithURL:response.URL
                                withFileLength:(NSUInteger)response.expectedContentLength
                               completionBlock:self.archiveCompletionBlock];
-    }
-    else {
-        NSLog(@"[ZipPinch] Fetch URL: failed. %@", response.URL);
-        NSError* error = [NSError errorWithDomain:@"HTTP Error"
-                                             code:[(NSHTTPURLResponse*)response statusCode]
-                                         userInfo:nil];
-        self.archiveCompletionBlock(0, nil, error);
+        }
+        else {
+            NSLog(@"[ZipPinch] Fetch URL: failed. %@", response.URL);
+            NSError* error = [NSError errorWithDomain:@"HTTP Error"
+                                                 code:[(NSHTTPURLResponse*)response statusCode]
+                                             userInfo:nil];
+            self.archiveCompletionBlock(0, nil, error);
+        }
     }
 }
 
+#pragma mark - Unzipping implementation
+
+- (ZPArchiveRequestCompletionBlock) unzipFile:(ZPEntry *)entry
+                              completionBlock:(ZPArchiveFileCompletionBlock)completionBlock  {
+
+    return ^(const char *cptr, NSUInteger len, NSError *error) {
+        
+        NSLog(@"[ZipPinch] Fetch File: ended. Received: %lu", (unsigned long)len);
+        
+        if (!cptr || len == 0 || error) {
+            completionBlock(entry, error);
+            
+            return;
+        }
+        
+        struct zip_file_header file_record;
+        int idx = 0;
+        
+        // Extract fields with a macro, if we would need to swap byteorder this would be the place
+#define GETFIELD( _field ) \
+memcpy(&file_record._field, &cptr[idx], sizeof(file_record._field)); \
+idx += sizeof(file_record._field)
+        GETFIELD( localFileHeaderSignature );
+        GETFIELD( versionNeededToExtract );
+        GETFIELD( generalPurposeBitFlag );
+        GETFIELD( compressionMethod );
+        GETFIELD( fileLastModificationTime );
+        GETFIELD( fileLastModificationDate );
+        GETFIELD( CRC32 );
+        GETFIELD( compressedSize );
+        GETFIELD( uncompressedSize );
+        GETFIELD( fileNameLength );
+        GETFIELD( extraFieldLength );
+#undef GETFIELD
+        
+        if (entry.method == Z_DEFLATED) {
+            z_stream zstream;
+            int ret;
+            
+            zstream.zalloc = Z_NULL;
+            zstream.zfree = Z_NULL;
+            zstream.opaque = Z_NULL;
+            zstream.avail_in = 0;
+            zstream.next_in = Z_NULL;
+            
+            ret = inflateInit2(&zstream, -MAX_WBITS);
+            
+            if (ret != Z_OK) {
+                return;
+            }
+            
+            zstream.avail_in = (uInt)entry.sizeCompressed;
+            zstream.next_in = (unsigned char *)&cptr[idx + file_record.fileNameLength + file_record.extraFieldLength];
+            
+            unsigned char *ptr = malloc(entry.sizeUncompressed);
+            
+            zstream.avail_out = (unsigned int)entry.sizeUncompressed;
+            zstream.next_out = ptr;
+            
+            ret = inflate(&zstream, Z_SYNC_FLUSH);
+            
+            entry.data = [NSData dataWithBytes:ptr length:entry.sizeUncompressed];
+            
+            NSLog(@"[ZipPinch] Uncompressed bytes: %li", (long)zstream.avail_in);
+            
+            free(ptr);
+            
+            switch (ret) {
+                case Z_NEED_DICT: {
+                    NSLog(@"[ZipPinch] Uncompressed Data Error");
+                    break;
+                }
+                    
+                case Z_DATA_ERROR: {
+                    NSLog(@"[ZipPinch] Uncompressed Error");
+                    break;
+                }
+                    
+                case Z_MEM_ERROR: {
+                    NSLog(@"[ZipPinch] Uncompressed Memory Error");
+                    break;
+                }
+            }
+            
+            inflateEnd(&zstream);
+            
+        } else if (entry.method == 0) {
+            unsigned char *ptr = (unsigned char *)&cptr[idx + file_record.fileNameLength + file_record.extraFieldLength];
+            entry.data = [NSData dataWithBytes:ptr length:entry.sizeUncompressed];
+            
+        } else {
+            NSLog(@"[ZipPinch] Unimplemented uncompress method: %li", (long)entry.method);
+        }
+        
+        completionBlock(entry, nil);
+    };
+}
 
 
 

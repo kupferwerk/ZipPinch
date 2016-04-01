@@ -13,6 +13,8 @@
 @interface ZipEntryViewController ()
 
 @property (weak,nonatomic) IBOutlet UIImageView *imageView;
+@property (weak, nonatomic) NSURLSessionDownloadTask* downloadTask;
+@property (strong, nonatomic) NSData* resumeData;
 
 @end
 
@@ -22,16 +24,30 @@
 - (void)viewWillAppear:(BOOL)animated   {
     
     [super viewWillAppear:animated];
-    
+    [self startOrResumeDownload:nil];
+}
+
+
+- (IBAction)pauseDownload:(id)sender    {
+    [self.downloadTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+        _selectedZipEntry.resumeData = resumeData;
+    }];
+}
+
+- (IBAction)startOrResumeDownload:(id)sender    {
     //TODO: Progress reporting
-    
-    [_zipManager loadDataWithFilePath:_selectedZipEntry.filePath completionBlock:^(NSData *data, NSError *error) {
+    //TODO: Resuming does not work, as it seems to set the startOffset, but not the end offset
+    self.downloadTask = [_zipManager loadDataWithEntry:_selectedZipEntry completionBlock:^(NSData *data, NSError *error) {
         if (error) {
             [self alertError:error];
         } else {
             _imageView.image = [[UIImage alloc] initWithData:data];
         }
     }];
+}
+
+- (IBAction)cancelDownload:(id)sender    {
+    [self.downloadTask cancel];
 }
 
 @end

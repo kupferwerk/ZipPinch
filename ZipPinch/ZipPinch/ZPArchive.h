@@ -23,7 +23,7 @@ typedef NS_ENUM(NSUInteger, ZPEntryErrorCode) {
  *  @param entries    the array of ZPEntry, describing the entris of the archive
  *  @param error      if failed, an error, otherwise nil
  */
-typedef void(^ZPArchiveArchiveCompletionBlock)(long long fileLength, NSArray *entries, NSError *error);
+typedef void(^ZPArchiveArchiveCompletionBlock)(long long fileLength, NSArray<ZPEntry*>*entries, NSError *error);
 
 /**
  *  The block to handle fetching a single entry
@@ -49,7 +49,9 @@ typedef void(^ZPArchiveFileCompletionBlock)(ZPEntry *entry, NSError *error);
  *
  *  @param entry           a single zip archive entry
  *  @param completionBlock the block to handle the download of a single ZPEntry. The downloaded data are stored in entry.data
+ *
+ *  @return the download task, i.e. to pause or cancel the download
  */
-- (void)fetchFile:(ZPEntry *)entry completionBlock:(ZPArchiveFileCompletionBlock)completionBlock;
+- (NSURLSessionDownloadTask*)fetchFile:(ZPEntry *)entry completionBlock:(ZPArchiveFileCompletionBlock)completionBlock;
 
 @end
