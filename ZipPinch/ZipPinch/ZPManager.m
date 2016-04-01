@@ -64,6 +64,7 @@ static NSString *const ZPManagerCacheEntriesKey = @"entries";
     return path;
 }
 
+
 - (void)loadContentWithCompletionBlock:(ZPArchiveArchiveCompletionBlock)completionBlock
 {
     // Load entries from cache.
@@ -136,19 +137,19 @@ static NSString *const ZPManagerCacheEntriesKey = @"entries";
 }
 
 
-- (void)loadDataWithFilePath:(NSString *)filePath completionBlock:(ZPManagerDataCompletionBlock)completionBlock
+- (NSURLSessionDownloadTask*)loadDataWithFilePath:(NSString *)filePath completionBlock:(ZPManagerDataCompletionBlock)completionBlock
 {
-    [self loadDataWithEntry:[self entryWithFilePath:filePath] completionBlock:completionBlock];
+    return [self loadDataWithEntry:[self entryWithFilePath:filePath] completionBlock:completionBlock];
 }
 
 
-- (void)loadDataWithURL:(NSURL *)URL completionBlock:(ZPManagerDataCompletionBlock)completionBlock
+- (NSURLSessionDownloadTask*)loadDataWithURL:(NSURL *)URL completionBlock:(ZPManagerDataCompletionBlock)completionBlock
 {
-    [self loadDataWithEntry:[self entryWithURL:URL] completionBlock:completionBlock];
+    return [self loadDataWithEntry:[self entryWithURL:URL] completionBlock:completionBlock];
 }
 
 
-- (void)loadDataWithEntry:(ZPEntry *)entry completionBlock:(ZPManagerDataCompletionBlock)completionBlock
+- (NSURLSessionDownloadTask*)loadDataWithEntry:(ZPEntry *)entry completionBlock:(ZPManagerDataCompletionBlock)completionBlock
 {
     if (entry.data) {
         if (completionBlock) {
@@ -156,8 +157,7 @@ static NSString *const ZPManagerCacheEntriesKey = @"entries";
                 completionBlock(entry.data, nil);
             });
         }
-        
-        return;
+        return nil;
     }
     
     // Check cache.
@@ -174,12 +174,11 @@ static NSString *const ZPManagerCacheEntriesKey = @"entries";
                     completionBlock(data, nil);
                 });
             }
-            
-            return;
+            return nil;
         }
     }
     
-    [_archive fetchFile:entry completionBlock:^(ZPEntry *entry, NSError *error) {
+    return [_archive fetchFile:entry completionBlock:^(ZPEntry *entry, NSError *error) {
         // Cache data.
         if (!error && _cacheEnabled) {
             NSString *basePath = [path stringByDeletingLastPathComponent];

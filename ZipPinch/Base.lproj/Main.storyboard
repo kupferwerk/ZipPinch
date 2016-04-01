@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="9532" systemVersion="15C50" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="A17-jW-T05">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="10116" systemVersion="15E65" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" initialViewController="A17-jW-T05">
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="9530"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
         <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
     </dependencies>
     <scenes>
@@ -145,22 +145,51 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" animating="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="Efi-5e-BA9">
-                                <rect key="frame" x="290" y="312" width="20" height="20"/>
+                                <rect key="frame" x="290" y="290" width="20" height="20"/>
                             </activityIndicatorView>
-                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Fzw-RB-zgw">
-                                <rect key="frame" x="0.0" y="44" width="600" height="556"/>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="LAq-hh-FyW">
+                                <rect key="frame" x="279" y="179" width="42" height="30"/>
+                                <state key="normal" title="Pause"/>
+                                <connections>
+                                    <action selector="pauseDownload:" destination="qQ3-BW-ueL" eventType="touchUpInside" id="O5P-0c-JNN"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="A2l-Mg-owd">
+                                <rect key="frame" x="272.5" y="217" width="55" height="30"/>
+                                <state key="normal" title="Resume"/>
+                                <connections>
+                                    <action selector="startOrResumeDownload:" destination="qQ3-BW-ueL" eventType="touchUpInside" id="Sxj-0s-INw"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="i4z-V0-2tv">
+                                <rect key="frame" x="280.5" y="255" width="39" height="30"/>
+                                <state key="normal" title="Abort"/>
+                                <connections>
+                                    <action selector="cancelDownload:" destination="qQ3-BW-ueL" eventType="touchUpInside" id="G07-MS-wBM"/>
+                                </connections>
+                            </button>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Fzw-RB-zgw">
+                                <rect key="frame" x="4" y="44" width="592" height="512"/>
                             </imageView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
                             <constraint firstAttribute="trailingMargin" secondItem="Fzw-RB-zgw" secondAttribute="trailing" constant="-16" id="0sC-Sl-siB"/>
+                            <constraint firstItem="A2l-Mg-owd" firstAttribute="top" secondItem="LAq-hh-FyW" secondAttribute="bottom" constant="8" id="5bz-Ts-uLc"/>
+                            <constraint firstItem="A2l-Mg-owd" firstAttribute="centerX" secondItem="50w-BR-s9s" secondAttribute="centerX" id="Bog-4w-0Jg"/>
                             <constraint firstItem="Efi-5e-BA9" firstAttribute="centerY" secondItem="Fzw-RB-zgw" secondAttribute="centerY" id="BxN-V3-mVl"/>
                             <constraint firstItem="Efi-5e-BA9" firstAttribute="centerX" secondItem="Fzw-RB-zgw" secondAttribute="centerX" id="El4-oa-Kib"/>
+                            <constraint firstItem="i4z-V0-2tv" firstAttribute="top" secondItem="A2l-Mg-owd" secondAttribute="bottom" constant="8" id="T8F-cv-ABG"/>
                             <constraint firstItem="rGJ-OS-Ww2" firstAttribute="top" secondItem="Fzw-RB-zgw" secondAttribute="bottom" id="WOn-dI-25f"/>
                             <constraint firstItem="Fzw-RB-zgw" firstAttribute="leading" secondItem="50w-BR-s9s" secondAttribute="leadingMargin" constant="-16" id="WTT-Kd-dBe"/>
                             <constraint firstItem="Fzw-RB-zgw" firstAttribute="top" secondItem="Tlf-7K-b2c" secondAttribute="bottom" id="e2Z-jQ-WRw"/>
+                            <constraint firstItem="LAq-hh-FyW" firstAttribute="centerX" secondItem="50w-BR-s9s" secondAttribute="centerX" id="fzV-a3-MRP"/>
+                            <constraint firstItem="i4z-V0-2tv" firstAttribute="centerX" secondItem="50w-BR-s9s" secondAttribute="centerX" id="nWI-w2-8WV"/>
+                            <constraint firstItem="LAq-hh-FyW" firstAttribute="top" secondItem="Tlf-7K-b2c" secondAttribute="bottom" constant="135" id="qwt-XK-Ao0"/>
                         </constraints>
                     </view>
+                    <toolbarItems/>
+                    <simulatedToolbarMetrics key="simulatedBottomBarMetrics"/>
                     <connections>
                         <outlet property="imageView" destination="Fzw-RB-zgw" id="Gzp-TT-e0q"/>
                     </connections>

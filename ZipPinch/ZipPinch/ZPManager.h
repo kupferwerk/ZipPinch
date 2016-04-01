@@ -34,15 +34,33 @@ typedef void(^ZPManagerDataCompletionBlock)(NSData *data, NSError *error);
 - (void)enableCacheAtPath:(NSString *)path;
 
 
+/**
+ *  Loads the content table from the zip file
+ *
+ *  @param completionBlock the block that processes the entry table
+ */
 - (void)loadContentWithCompletionBlock:(ZPArchiveArchiveCompletionBlock)completionBlock;
 
-- (void)loadDataWithFilePath:(NSString *)filePath completionBlock:(ZPManagerDataCompletionBlock)completionBlock;
 
-- (void)loadDataWithURL:(NSURL *)URL completionBlock:(ZPManagerDataCompletionBlock)completionBlock;
+/**
+ *  Starts or Resumes the download of the specified entry
+ *
+ *  @param entry      the entry, if the entry has resumeData, the download is started from them
+ *  @param completionBlock the block to run after completion
+ *
+ *  @return the started downloadTask, which can be used to cancel the task
+ */
+- (NSURLSessionDownloadTask*)loadDataWithEntry:(ZPEntry *)entry completionBlock:(ZPManagerDataCompletionBlock)completionBlock;
+
+
+- (NSURLSessionDownloadTask*)loadDataWithFilePath:(NSString *)filePath completionBlock:(ZPManagerDataCompletionBlock)completionBlock;
+
+- (NSURLSessionDownloadTask*)loadDataWithURL:(NSURL *)URL completionBlock:(ZPManagerDataCompletionBlock)completionBlock;
 
 
 - (void)clearCache;
 - (void)clearMemoryCache;
+
 
 /**
  *  clears the default cache at /Library/Caches/ZipPinch/.
