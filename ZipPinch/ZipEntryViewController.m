@@ -30,6 +30,8 @@
 
 - (IBAction)pauseDownload:(id)sender    {
     [self.downloadTask cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
+#warning resume does not work, because resume data are not set correctly for file chunks!
+        //TODO: file a radar for this issue!
         _selectedZipEntry.resumeData = resumeData;
     }];
 }

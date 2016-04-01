@@ -299,7 +299,12 @@ idx += sizeof(dir_record._field)
     NSURLSessionDownloadTask* downloadTask;
     ZPArchiveRequestCompletionBlock requestCompletionBlock = [self unzipFile:entry completionBlock:completionBlock];
     
+    //resuming doesn't work due to an issue in creation of resume data!
+    //temporary fix: nil them.
+    entry.resumeData = nil;
+    
     if ( entry.resumeData)  {
+        //This is currently never called, as it doesn't set the range of the chunkc correctly!
         downloadTask = [self resumeRequestWithResumeData: entry.resumeData
                                          completionBlock: requestCompletionBlock];
     }
